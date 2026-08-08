@@ -8,7 +8,7 @@
     "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:front\"",
     "dev:api": "tsx watch api/index.ts",
     "dev:front": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend run build",
+    "build": "npm ci --prefix frontend && npm --prefix frontend run build",
     "start": "tsx api/index.ts",
     "typecheck": "tsc --noEmit && npm --prefix frontend run typecheck",
     "db:generate": "drizzle-kit generate",
