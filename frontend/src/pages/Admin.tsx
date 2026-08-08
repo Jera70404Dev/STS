@@ -1,0 +1,348 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import FullCalendar from '@fullcalendar/react'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import interactionPlugin from '@fullcalendar/interaction'
+import type { DatesSetArg, EventClickArg, EventInput } from '@fullcalendar/core'
+import esLocale from '@fullcalendar/core/locales/es'
+import { api, ApiError, clearToken, getToken } from '../api'
+import { VEHICLES, STATUS_LABELS, type Booking, type BookingStatus } from '../types'
+import { Spinner, StatusBadge } from '../components/ui'
+
+const STATUS_COLORS: Record<BookingStatus, string> = {
+  pending: '#d97706',
+  confirmed: '#2563eb',
+  completed: '#16a34a',
+  cancelled: '#94a3b8',
+}
+
+const ALL_STATUSES: BookingStatus[] = ['pending', 'confirmed', 'completed', 'cancelled']
+
+function toISODate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function todayISO(): string {
+  return toISODate(new Date())
+}
+
+export default function Admin() {
+  const navigate = useNavigate()
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [range, setRange] = useState<{ from: string; to: string }>(() => {
+    const now = new Date()
+    const from = toISODate(new Date(now.getFullYear(), now.getMonth(), 1))
+    const to = toISODate(new Date(now.getFullYear(), now.getMonth() + 1, 0))
+    return { from, to }
+  })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<'all' | BookingStatus>('all')
+  const [selected, setSelected] = useState<Booking | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const load = useCallback(
+    async (from: string, to: string) => {
+      setLoading(true)
+      setError(null)
+      try {
+        const { bookings: rows } = await api.getBookings(from, to)
+        setBookings(rows)
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          clearToken()
+          navigate('/admin/login', { replace: true })
+          return
+        }
+        setError(err instanceof Error ? err.message : 'Error cargando reservas.')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [navigate],
+  )
+
+  useEffect(() => {
+    if (!getToken()) {
+      navigate('/admin/login', { replace: true })
+      return
+    }
+    load(range.from, range.to)
+  }, [load, navigate, range])
+
+  const onDatesSet = useCallback((arg: DatesSetArg) => {
+    setRange({ from: toISODate(arg.start), to: toISODate(new Date(arg.end.getTime() - 1)) })
+  }, [])
+
+  const filtered = useMemo(
+    () => (statusFilter === 'all' ? bookings : bookings.filter((b) => b.status === statusFilter)),
+    [bookings, statusFilter],
+  )
+
+  const events: EventInput[] = useMemo(
+    () =>
+      filtered.map((b) => ({
+        id: b.id,
+        title: `${b.tripTime} · ${b.customerName}`,
+        start: `${b.tripDate}T${b.tripTime}`,
+        allDay: false,
+        backgroundColor: STATUS_COLORS[b.status],
+        borderColor: STATUS_COLORS[b.status],
+        extendedProps: { booking: b },
+      })),
+    [filtered],
+  )
+
+  const stats = useMemo(() => {
+    const today = todayISO()
+    return {
+      today: bookings.filter((b) => b.tripDate === today && b.status !== 'cancelled').length,
+      pending: bookings.filter((b) => b.status === 'pending').length,
+      confirmed: bookings.filter((b) => b.status === 'confirmed').length,
+      total: bookings.length,
+    }
+  }, [bookings])
+
+  function onEventClick(arg: EventClickArg) {
+    const booking = arg.event.extendedProps.booking as Booking
+    setSelected(booking)
+  }
+
+  async function changeStatus(booking: Booking, status: BookingStatus) {
+    if (booking.status === status) return
+    setSaving(true)
+    setError(null)
+    try {
+      await api.updateStatus(booking.id, status)
+      setBookings((rows) => rows.map((b) => (b.id === booking.id ? { ...b, status } : b)))
+      setSelected((s) => (s && s.id === booking.id ? { ...s, status } : s))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function removeBooking(booking: Booking) {
+    if (!window.confirm(`¿Eliminar la reserva de ${booking.customerName}? Esta acción no se puede deshacer.`)) {
+      return
+    }
+    setSaving(true)
+    try {
+      await api.deleteBooking(booking.id)
+      setBookings((rows) => rows.filter((b) => b.id !== booking.id))
+      setSelected(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function logout() {
+    clearToken()
+    navigate('/admin/login', { replace: true })
+  }
+
+  if (!getToken()) {
+    return null
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Panel de reservas</h1>
+          <p className="text-sm text-slate-500">Calendario de viajes del {range.from} al {range.to}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <select
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-brand-600"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | BookingStatus)}
+          >
+            <option value="all">Todos los estados</option>
+            {ALL_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={logout}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard label="Viajes de hoy" value={stats.today} color="text-brand-700" />
+        <StatCard label="Pendientes" value={stats.pending} color="text-amber-600" />
+        <StatCard label="Confirmados" value={stats.confirmed} color="text-blue-600" />
+        <StatCard label="En este rango" value={stats.total} color="text-slate-700" />
+      </div>
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        {loading ? (
+          <div className="flex justify-center py-24 text-brand-700">
+            <Spinner className="h-8 w-8" />
+          </div>
+        ) : (
+          <FullCalendar
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            initialView="timeGridWeek"
+            locale="es"
+            locales={[esLocale]}
+            firstDay={1}
+            allDaySlot={false}
+            slotMinTime="06:00:00"
+            slotMaxTime="23:00:00"
+            headerToolbar={{
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,timeGridWeek',
+            }}
+            events={events}
+            datesSet={onDatesSet}
+            eventClick={onEventClick}
+            height="auto"
+            dayMaxEvents={4}
+          />
+        )}
+      </div>
+
+      {selected && (
+        <BookingModal
+          booking={selected}
+          saving={saving}
+          onClose={() => setSelected(null)}
+          onChangeStatus={(s) => changeStatus(selected, s)}
+          onDelete={() => removeBooking(selected)}
+        />
+      )}
+    </div>
+  )
+}
+
+function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className={`text-3xl font-extrabold ${color}`}>{value}</div>
+      <div className="mt-1 text-sm text-slate-500">{label}</div>
+    </div>
+  )
+}
+
+function BookingModal({
+  booking,
+  saving,
+  onClose,
+  onChangeStatus,
+  onDelete,
+}: {
+  booking: Booking
+  saving: boolean
+  onClose: () => void
+  onChangeStatus: (s: BookingStatus) => void
+  onDelete: () => void
+}) {
+  const vehicle = VEHICLES[booking.vehicle]
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">
+              {booking.customerName}
+              <span className="ml-2 align-middle">
+                <StatusBadge status={booking.status} />
+              </span>
+            </h2>
+            <p className="text-xs text-slate-400">Nº {booking.id}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+
+        <dl className="mt-4 space-y-2 text-sm">
+          <Row label="Ruta" value={`${booking.pickup} → ${booking.dropoff}`} />
+          <Row label="Fecha y hora" value={`${booking.tripDate} · ${booking.tripTime}`} />
+          <Row
+            label="Vehículo"
+            value={`${vehicle.label} · ${booking.passengers} pasajeros · ${booking.luggage} equipajes`}
+          />
+          <Row label="Contacto" value={`${booking.customerPhone} · ${booking.customerEmail}`} />
+          {booking.flightNumber && <Row label="Vuelo" value={booking.flightNumber} />}
+          {booking.notes && <Row label="Notas" value={booking.notes} />}
+          <Row label="Recibida" value={new Date(booking.createdAt).toLocaleString('es-US')} />
+        </dl>
+
+        <div className="mt-5">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Cambiar estado
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {ALL_STATUSES.map((s) => (
+              <button
+                key={s}
+                disabled={saving}
+                onClick={() => onChangeStatus(s)}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition disabled:opacity-50 ${
+                  booking.status === s
+                    ? 'border-brand-600 bg-brand-600 text-white'
+                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {STATUS_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end border-t border-slate-100 pt-4">
+          <button
+            onClick={onDelete}
+            disabled={saving}
+            className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            Eliminar reserva
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-3">
+      <dt className="w-28 shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        {label}
+      </dt>
+      <dd className="text-slate-800">{value}</dd>
+    </div>
+  )
+}
