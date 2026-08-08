@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import bcrypt from 'bcryptjs'
-import { getDb } from './index'
-import { admins } from './schema'
+import { getDb } from './index.js'
+import { admins } from './schema.js'
 
 async function main() {
   const username = process.env.ADMIN_USERNAME || 'admin'

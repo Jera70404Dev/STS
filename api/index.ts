@@ -2,10 +2,10 @@ import express from 'express'
 import type { NextFunction, Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import bookingsRouter from './routes/bookings'
-import authRouter from './routes/auth'
-import adminRouter from './routes/admin'
-import { requireAuth } from './middleware/auth'
+import bookingsRouter from './routes/bookings.js'
+import authRouter from './routes/auth.js'
+import adminRouter from './routes/admin.js'
+import { requireAuth } from './middleware/auth.js'
 
 dotenv.config()
 

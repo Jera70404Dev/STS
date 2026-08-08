@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
-import { VEHICLES } from './vehicles'
-import type { Booking } from '../db/schema'
+import { VEHICLES } from './vehicles.js'
+import type { Booking } from '../db/schema.js'
 
 function getResend(): Resend | null {
   if (!process.env.RESEND_API_KEY) return null

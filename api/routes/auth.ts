@@ -1,10 +1,10 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
-import { getDb } from '../../db'
-import { admins } from '../../db/schema'
-import { loginSchema } from '../../lib/validators'
-import { signToken } from '../middleware/auth'
+import { getDb } from '../../db/index.js'
+import { admins } from '../../db/schema.js'
+import { loginSchema } from '../../lib/validators.js'
+import { signToken } from '../middleware/auth.js'
 
 const router = Router()
 

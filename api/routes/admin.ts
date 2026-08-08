@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { and, asc, eq, gte, lte } from 'drizzle-orm'
-import { getDb } from '../../db'
-import { bookings } from '../../db/schema'
-import { listBookingsQuery, updateStatusSchema } from '../../lib/validators'
+import { getDb } from '../../db/index.js'
+import { bookings } from '../../db/schema.js'
+import { listBookingsQuery, updateStatusSchema } from '../../lib/validators.js'
 
 const router = Router()
 

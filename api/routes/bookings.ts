@@ -1,9 +1,9 @@
 import { Router, type Response } from 'express'
 import { eq } from 'drizzle-orm'
-import { getDb } from '../../db'
-import { bookings } from '../../db/schema'
-import { createBookingSchema } from '../../lib/validators'
-import { sendBookingNotification, sendConfirmationToClient } from '../../lib/email'
+import { getDb } from '../../db/index.js'
+import { bookings } from '../../db/schema.js'
+import { createBookingSchema } from '../../lib/validators.js'
+import { sendBookingNotification, sendConfirmationToClient } from '../../lib/email.js'
 
 const router = Router()
 
