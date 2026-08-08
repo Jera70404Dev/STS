@@ -2,8 +2,10 @@
   "name": "transport-agency",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "description": "Sistema de reservas para agencia de transporte (frontend React + API Express en Vercel + PostgreSQL en Neon + emails con Resend)",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:front\"",
     "dev:api": "tsx watch api/index.ts",
