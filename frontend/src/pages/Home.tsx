@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'motion/react'
 import { ArrowRight, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
 import {
   BRAND,
@@ -33,27 +34,63 @@ export default function Home() {
 
 function Hero() {
   return (
-    <section className="relative flex min-h-screen items-center overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-ink-950/70 via-ink-950/30 to-transparent" />
+    <section className="relative flex min-h-screen flex-col overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink-950/60 via-ink-950/10 to-ink-950/80" />
 
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-40">
-        <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">
-            Miami · Fort Lauderdale · Palm Beach
-          </p>
-          <h1 className="mt-5 max-w-3xl font-display text-4xl font-semibold leading-tight text-white sm:text-6xl">
-            {HERO.title}
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-400">{HERO.subtitle}</p>
-          <div className="mt-9 flex flex-wrap gap-4">
-            <Button to="/reserve" className="px-8 py-4 text-base">
-              Reserve Now <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button to="/fleet" variant="outline" className="px-8 py-4 text-base">
-              Our Fleet
-            </Button>
+      <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pt-32">
+        <div className="grid flex-1 items-center gap-12 lg:grid-cols-2">
+          <div>
+            <Reveal>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">
+                Miami · Fort Lauderdale · Palm Beach
+              </p>
+              <h1 className="mt-5 max-w-3xl font-display text-4xl font-semibold leading-tight text-white sm:text-6xl">
+                {HERO.title}
+              </h1>
+              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-400">{HERO.subtitle}</p>
+            </Reveal>
           </div>
-        </Reveal>
+
+          <div className="hidden justify-center lg:flex">
+            <Reveal delay={120}>
+              <motion.div
+                animate={{ y: [0, -16, 0], rotate: [0, 1.5, 0] }}
+                transition={{ duration: 7, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
+              >
+                <div className="w-[420px] rounded-3xl border border-white/10 bg-white/5 p-5 shadow-glow backdrop-blur-xl">
+                  <div className="relative overflow-hidden rounded-2xl">
+                    <img
+                      src={IMAGES.heroCar}
+                      alt="Executive vehicle"
+                      className="h-64 w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink-950/50 to-transparent" />
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-display text-lg font-semibold text-white">
+                        Signature Executive Ride
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-400">Available 24/7 · Miami · FL</p>
+                    </div>
+                    <Button to="/reserve" variant="outline" className="px-4 py-2 text-xs">
+                      Book
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </Reveal>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 pb-10 pt-10">
+          <Button to="/reserve" className="px-8 py-4 text-base">
+            Reserve Now <ArrowRight className="h-4 w-4" />
+          </Button>
+          <Button to="/fleet" variant="outline" className="px-8 py-4 text-base">
+            Our Fleet
+          </Button>
+        </div>
       </div>
     </section>
   )
@@ -84,7 +121,7 @@ function QuickBooking() {
   }
 
   return (
-    <section className="relative z-10 mx-auto -mt-24 max-w-6xl px-4">
+    <section className="relative z-10 mx-auto max-w-6xl px-4">
       <Reveal>
         <form
           onSubmit={onSubmit}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { Clock, Mail, Menu, Phone, X } from 'lucide-react'
-import { BRAND, NAV_LINKS } from '../../content'
+import { Menu, X } from 'lucide-react'
+import { NAV_LINKS } from '../../content'
 import { Button } from '../ui'
 
 export default function Header() {
@@ -17,26 +17,6 @@ export default function Header() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
-      <div
-        className={`hidden overflow-hidden transition-all duration-300 md:block ${
-          scrolled ? 'max-h-0' : 'max-h-12'
-        } border-b border-white/5 bg-ink-950/90`}
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 text-xs text-ink-400">
-          <div className="flex items-center gap-6">
-            <a href={BRAND.phoneHref} className="flex items-center gap-1.5 hover:text-gold-300">
-              <Phone className="h-3.5 w-3.5" /> {BRAND.phone}
-            </a>
-            <a href={`mailto:${BRAND.email}`} className="flex items-center gap-1.5 hover:text-gold-300">
-              <Mail className="h-3.5 w-3.5" /> {BRAND.email}
-            </a>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5" /> {BRAND.hours} · Serving {BRAND.city}
-          </div>
-        </div>
-      </div>
-
       <div
         className={`transition-all duration-300 ${
           scrolled
