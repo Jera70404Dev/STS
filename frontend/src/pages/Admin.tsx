@@ -75,7 +75,9 @@ export default function Admin() {
   }, [load, navigate, range])
 
   const onDatesSet = useCallback((arg: DatesSetArg) => {
-    setRange({ from: toISODate(arg.start), to: toISODate(new Date(arg.end.getTime() - 1)) })
+    const from = toISODate(arg.start)
+    const to = toISODate(new Date(arg.end.getTime() - 1))
+    setRange((prev) => (prev.from === from && prev.to === to ? prev : { from, to }))
   }, [])
 
   const filtered = useMemo(
