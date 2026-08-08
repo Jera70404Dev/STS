@@ -34,13 +34,7 @@ export default function Home() {
 function Hero() {
   return (
     <section className="relative flex min-h-screen items-center overflow-hidden">
-      <img
-        src={IMAGES.hero}
-        alt="Luxury chauffeured sedan at night"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-ink-950/90 via-ink-950/70 to-ink-950/30" />
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-ink-950 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-ink-950/70 via-ink-950/30 to-transparent" />
 
       <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-40">
         <Reveal>
