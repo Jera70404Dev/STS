@@ -1,57 +1,50 @@
-import { Link, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { Route, Routes } from 'react-router-dom'
+import Layout from './components/layout/Layout'
 import Home from './pages/Home'
+import About from './pages/About'
+import Fleet from './pages/Fleet'
+import Chauffeurs from './pages/Chauffeurs'
+import Services from './pages/Services'
+import Reserve from './pages/Reserve'
 import Confirmation from './pages/Confirmation'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 import Login from './pages/Login'
-import Admin from './pages/Admin'
+import NotFound from './pages/NotFound'
+import { Spinner } from './components/ui'
 
-function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="bg-brand-700 text-white shadow">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link to="/" className="text-xl font-bold tracking-tight">
-            🚐 Transport Agency
-          </Link>
-          <div className="flex items-center gap-4 text-sm">
-            <Link to="/" className="hover:text-brand-100">
-              Reservar
-            </Link>
-            <Link to="/admin/login" className="hover:text-brand-100">
-              Administración
-            </Link>
-          </div>
-        </nav>
-      </header>
-      <main>{children}</main>
-      <footer className="border-t bg-white py-8 text-center text-sm text-slate-500">
-        <div className="mx-auto max-w-6xl px-4">
-          © {new Date().getFullYear()} Transport Agency · Servicio de transporte por todo Estados
-          Unidos
-        </div>
-      </footer>
-    </div>
-  )
-}
+const Admin = lazy(() => import('./pages/Admin'))
 
 export default function App() {
   return (
     <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/fleet" element={<Fleet />} />
+        <Route path="/chauffeurs" element={<Chauffeurs />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/reserve" element={<Reserve />} />
         <Route path="/confirmacion" element={<Confirmation />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/admin/login" element={<Login />} />
-        <Route path="/admin" element={<Admin />} />
         <Route
-          path="*"
+          path="/admin"
           element={
-            <div className="mx-auto max-w-6xl px-4 py-20 text-center">
-              <h1 className="text-3xl font-bold">Página no encontrada</h1>
-              <Link to="/" className="mt-4 inline-block text-brand-600 underline">
-                Volver al inicio
-              </Link>
-            </div>
+            <Suspense
+              fallback={
+                <div className="flex justify-center py-32 text-gold-400">
+                  <Spinner className="h-8 w-8" />
+                </div>
+              }
+            >
+              <Admin />
+            </Suspense>
           }
         />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
   )

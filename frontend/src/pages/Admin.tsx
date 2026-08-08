@@ -155,15 +155,15 @@ export default function Admin() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8 pt-28">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Panel de reservas</h1>
-          <p className="text-sm text-slate-500">Calendario de viajes del {range.from} al {range.to}</p>
+          <h1 className="font-display text-2xl font-semibold text-white">Panel de reservas</h1>
+          <p className="text-sm text-ink-500">Calendario de viajes del {range.from} al {range.to}</p>
         </div>
         <div className="flex items-center gap-3">
           <select
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-brand-600"
+            className="rounded-lg border border-ink-600 bg-ink-800 px-3 py-2 text-sm text-white shadow-sm outline-none transition focus:border-gold-400"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'all' | BookingStatus)}
           >
@@ -176,7 +176,7 @@ export default function Admin() {
           </select>
           <button
             onClick={logout}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100"
+            className="rounded-lg border border-white/15 bg-ink-800 px-4 py-2 text-sm font-medium text-ink-400 shadow-sm transition hover:border-gold-400/60 hover:text-gold-300"
           >
             Cerrar sesión
           </button>
@@ -184,21 +184,21 @@ export default function Admin() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Viajes de hoy" value={stats.today} color="text-brand-700" />
-        <StatCard label="Pendientes" value={stats.pending} color="text-amber-600" />
-        <StatCard label="Confirmados" value={stats.confirmed} color="text-blue-600" />
-        <StatCard label="En este rango" value={stats.total} color="text-slate-700" />
+        <StatCard label="Viajes de hoy" value={stats.today} color="text-gold-400" />
+        <StatCard label="Pendientes" value={stats.pending} color="text-amber-400" />
+        <StatCard label="Confirmados" value={stats.confirmed} color="text-blue-400" />
+        <StatCard label="En este rango" value={stats.total} color="text-ink-400" />
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-800/60 bg-red-950/50 px-4 py-3 text-sm text-red-300">
           {error}
         </div>
       )}
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border border-white/10 bg-ink-900 p-4 shadow-card">
         {loading ? (
-          <div className="flex justify-center py-24 text-brand-700">
+          <div className="flex justify-center py-24 text-gold-400">
             <Spinner className="h-8 w-8" />
           </div>
         ) : (
@@ -240,9 +240,9 @@ export default function Admin() {
 
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-white/10 bg-ink-900 p-4 shadow-card">
       <div className={`text-3xl font-extrabold ${color}`}>{value}</div>
-      <div className="mt-1 text-sm text-slate-500">{label}</div>
+      <div className="mt-1 text-sm text-ink-500">{label}</div>
     </div>
   )
 }
@@ -263,26 +263,26 @@ function BookingModal({
   const vehicle = VEHICLES[booking.vehicle]
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 p-4"
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-ink-900 p-6 shadow-card"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="font-display text-lg font-semibold text-white">
               {booking.customerName}
               <span className="ml-2 align-middle">
                 <StatusBadge status={booking.status} />
               </span>
             </h2>
-            <p className="text-xs text-slate-400">Nº {booking.id}</p>
+            <p className="text-xs text-ink-500">Nº {booking.id}</p>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg px-2 py-1 text-ink-500 transition hover:bg-ink-800 hover:text-white"
             aria-label="Cerrar"
           >
             ✕
@@ -303,7 +303,7 @@ function BookingModal({
         </dl>
 
         <div className="mt-5">
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
             Cambiar estado
           </div>
           <div className="flex flex-wrap gap-2">
@@ -314,8 +314,8 @@ function BookingModal({
                 onClick={() => onChangeStatus(s)}
                 className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition disabled:opacity-50 ${
                   booking.status === s
-                    ? 'border-brand-600 bg-brand-600 text-white'
-                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                    ? 'border-gold-400 bg-gold-400 text-ink-950'
+                    : 'border-ink-600 bg-ink-800 text-ink-400 hover:border-gold-400/60 hover:text-gold-300'
                 }`}
               >
                 {STATUS_LABELS[s]}
@@ -324,11 +324,11 @@ function BookingModal({
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end border-t border-slate-100 pt-4">
+        <div className="mt-6 flex justify-end border-t border-white/10 pt-4">
           <button
             onClick={onDelete}
             disabled={saving}
-            className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+            className="rounded-lg border border-red-800/60 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-950/50 disabled:opacity-50"
           >
             Eliminar reserva
           </button>
@@ -341,10 +341,10 @@ function BookingModal({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-3">
-      <dt className="w-28 shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <dt className="w-28 shrink-0 text-xs font-semibold uppercase tracking-wide text-ink-500">
         {label}
       </dt>
-      <dd className="text-slate-800">{value}</dd>
+      <dd className="text-ink-400">{value}</dd>
     </div>
   )
 }
