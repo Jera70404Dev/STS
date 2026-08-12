@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { motion } from 'motion/react'
 
 interface BeamsBackgroundProps {
   className?: string
@@ -18,6 +17,12 @@ interface Beam {
   pulse: number
   pulseSpeed: number
 }
+
+const MINIMUM_BEAMS = 10
+const SCALE = 4
+const MAX_DPR = 1.5
+const TARGET_FPS = 30
+const FRAME_MS = 1000 / TARGET_FPS
 
 function createBeam(width: number, height: number): Beam {
   const angle = -35 + Math.random() * 10
@@ -42,7 +47,6 @@ export function BeamsBackground({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const beamsRef = useRef<Beam[]>([])
   const animationFrameRef = useRef<number>(0)
-  const MINIMUM_BEAMS = 20
 
   const opacityMap = {
     subtle: 0.7,
@@ -57,28 +61,43 @@ export function BeamsBackground({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    const offCanvas = document.createElement('canvas')
+    const offCtx = offCanvas.getContext('2d')
+    if (!offCtx) return
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+    let width = window.innerWidth
+    let height = window.innerHeight
+
     const updateCanvasSize = () => {
-      const dpr = window.devicePixelRatio || 1
-      canvas.width = window.innerWidth * dpr
-      canvas.height = window.innerHeight * dpr
-      canvas.style.width = `${window.innerWidth}px`
-      canvas.style.height = `${window.innerHeight}px`
+      width = window.innerWidth
+      height = window.innerHeight
+      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR)
+
+      canvas.width = Math.round(width * dpr)
+      canvas.height = Math.round(height * dpr)
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+
+      offCanvas.width = Math.max(1, Math.round(width / SCALE))
+      offCanvas.height = Math.max(1, Math.round(height / SCALE))
+      offCtx.setTransform(1 / SCALE, 0, 0, 1 / SCALE, 0, 0)
 
       const totalBeams = Math.round(MINIMUM_BEAMS * 1.5)
       beamsRef.current = Array.from({ length: totalBeams }, () =>
-        createBeam(window.innerWidth, window.innerHeight)
+        createBeam(width, height)
       )
     }
 
-    updateCanvasSize()
-    window.addEventListener('resize', updateCanvasSize)
-
     function resetBeam(beam: Beam, index: number, totalBeams: number) {
       const column = index % 3
-      const spacing = window.innerWidth / 3
+      const spacing = width / 3
 
-      beam.y = window.innerHeight + 100
+      beam.y = height + 100
       beam.x =
         column * spacing +
         spacing / 2 +
@@ -90,17 +109,17 @@ export function BeamsBackground({
       return beam
     }
 
-    function drawBeam(ctx: CanvasRenderingContext2D, beam: Beam) {
-      ctx.save()
-      ctx.translate(beam.x, beam.y)
-      ctx.rotate((beam.angle * Math.PI) / 180)
+    function drawBeam(c: CanvasRenderingContext2D, beam: Beam) {
+      c.save()
+      c.translate(beam.x, beam.y)
+      c.rotate((beam.angle * Math.PI) / 180)
 
       const pulsingOpacity =
         beam.opacity *
         (0.8 + Math.sin(beam.pulse) * 0.2) *
         opacityMap[intensity]
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, beam.length)
+      const gradient = c.createLinearGradient(0, 0, 0, beam.length)
 
       gradient.addColorStop(0, `hsla(${beam.hue}, 85%, 65%, 0)`)
       gradient.addColorStop(0.1, `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity * 0.5})`)
@@ -109,16 +128,15 @@ export function BeamsBackground({
       gradient.addColorStop(0.9, `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity * 0.5})`)
       gradient.addColorStop(1, `hsla(${beam.hue}, 85%, 65%, 0)`)
 
-      ctx.fillStyle = gradient
-      ctx.fillRect(-beam.width / 2, 0, beam.width, beam.length)
-      ctx.restore()
+      c.fillStyle = gradient
+      c.fillRect(-beam.width / 2, 0, beam.width, beam.length)
+      c.restore()
     }
 
-    function animate() {
-      if (!canvas || !ctx) return
-
+    function renderFrame() {
+      if (!canvas || !ctx || !offCtx) return
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.filter = 'blur(35px)'
+      offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height)
 
       const totalBeams = beamsRef.current.length
       beamsRef.current.forEach((beam, index) => {
@@ -129,18 +147,72 @@ export function BeamsBackground({
           resetBeam(beam, index, totalBeams)
         }
 
-        drawBeam(ctx, beam)
+        drawBeam(offCtx, beam)
       })
 
-      animationFrameRef.current = requestAnimationFrame(animate)
+      ctx.drawImage(
+        offCanvas,
+        0,
+        0,
+        offCanvas.width,
+        offCanvas.height,
+        0,
+        0,
+        width,
+        height
+      )
     }
 
-    animate()
+    let lastRender = 0
+
+    function tick(now: number) {
+      if (document.hidden) {
+        animationFrameRef.current = 0
+        return
+      }
+      animationFrameRef.current = requestAnimationFrame(tick)
+      if (now - lastRender < FRAME_MS) return
+      lastRender = now
+      renderFrame()
+    }
+
+    const startLoop = () => {
+      if (animationFrameRef.current) return
+      lastRender = 0
+      animationFrameRef.current = requestAnimationFrame(tick)
+    }
+
+    const onVisibilityChange = () => {
+      if (!document.hidden && !reducedMotion.matches) {
+        startLoop()
+      }
+    }
+
+    updateCanvasSize()
+
+    if (reducedMotion.matches) {
+      renderFrame()
+    } else {
+      startLoop()
+      window.addEventListener('visibilitychange', onVisibilityChange)
+    }
+
+    const onResize = () => {
+      updateCanvasSize()
+      if (reducedMotion.matches) {
+        renderFrame()
+      } else {
+        startLoop()
+      }
+    }
+    window.addEventListener('resize', onResize)
 
     return () => {
-      window.removeEventListener('resize', updateCanvasSize)
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('visibilitychange', onVisibilityChange)
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = 0
       }
     }
   }, [intensity])
@@ -153,19 +225,10 @@ export function BeamsBackground({
       <canvas
         ref={canvasRef}
         className="absolute inset-0"
-        style={{ filter: 'blur(15px)' }}
+        style={{ filter: 'blur(6px)' }}
       />
 
-      <motion.div
-        className="absolute inset-0 bg-ink-950/5"
-        animate={{ opacity: [0.05, 0.15, 0.05] }}
-        transition={{
-          duration: 10,
-          ease: 'easeInOut',
-          repeat: Number.POSITIVE_INFINITY,
-        }}
-        style={{ backdropFilter: 'blur(50px)' }}
-      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.04)_0%,rgba(11,11,15,0.45)_100%)]" />
     </div>
   )
 }

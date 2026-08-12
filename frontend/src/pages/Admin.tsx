@@ -1,47 +1,33 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import FullCalendar from '@fullcalendar/react'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import interactionPlugin from '@fullcalendar/interaction'
-import type { DatesSetArg, EventClickArg, EventInput } from '@fullcalendar/core'
-import esLocale from '@fullcalendar/core/locales/es'
 import { api, ApiError, clearToken, getToken } from '../api'
 import { VEHICLES, STATUS_LABELS, type Booking, type BookingStatus } from '../types'
-import { Spinner, StatusBadge } from '../components/ui'
-
-const STATUS_COLORS: Record<BookingStatus, string> = {
-  pending: '#d97706',
-  confirmed: '#2563eb',
-  completed: '#16a34a',
-  cancelled: '#94a3b8',
-}
+import { StatusBadge } from '../components/ui'
+import AdminCalendar, { toISODate } from '../components/AdminCalendar'
 
 const ALL_STATUSES: BookingStatus[] = ['pending', 'confirmed', 'completed', 'cancelled']
-
-function toISODate(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
 
 function todayISO(): string {
   return toISODate(new Date())
 }
 
+function currentWeekRange(): { from: string; to: string } {
+  const now = new Date()
+  const monday = new Date(now)
+  monday.setHours(0, 0, 0, 0)
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
+  return {
+    from: toISODate(monday),
+    to: toISODate(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)),
+  }
+}
+
 export default function Admin() {
   const navigate = useNavigate()
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [range, setRange] = useState<{ from: string; to: string }>(() => {
-    const now = new Date()
-    const from = toISODate(new Date(now.getFullYear(), now.getMonth(), 1))
-    const to = toISODate(new Date(now.getFullYear(), now.getMonth() + 1, 0))
-    return { from, to }
-  })
+  const [range, setRange] = useState<{ from: string; to: string }>(currentWeekRange)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<'all' | BookingStatus>('all')
   const [selected, setSelected] = useState<Booking | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -74,30 +60,9 @@ export default function Admin() {
     load(range.from, range.to)
   }, [load, navigate, range])
 
-  const onDatesSet = useCallback((arg: DatesSetArg) => {
-    const from = toISODate(arg.start)
-    const to = toISODate(new Date(arg.end.getTime() - 1))
+  const handleRangeChange = useCallback((from: string, to: string) => {
     setRange((prev) => (prev.from === from && prev.to === to ? prev : { from, to }))
   }, [])
-
-  const filtered = useMemo(
-    () => (statusFilter === 'all' ? bookings : bookings.filter((b) => b.status === statusFilter)),
-    [bookings, statusFilter],
-  )
-
-  const events: EventInput[] = useMemo(
-    () =>
-      filtered.map((b) => ({
-        id: b.id,
-        title: `${b.tripTime} · ${b.customerName}`,
-        start: `${b.tripDate}T${b.tripTime}`,
-        allDay: false,
-        backgroundColor: STATUS_COLORS[b.status],
-        borderColor: STATUS_COLORS[b.status],
-        extendedProps: { booking: b },
-      })),
-    [filtered],
-  )
 
   const stats = useMemo(() => {
     const today = todayISO()
@@ -108,11 +73,6 @@ export default function Admin() {
       total: bookings.length,
     }
   }, [bookings])
-
-  function onEventClick(arg: EventClickArg) {
-    const booking = arg.event.extendedProps.booking as Booking
-    setSelected(booking)
-  }
 
   async function changeStatus(booking: Booking, status: BookingStatus) {
     if (booking.status === status) return
@@ -161,26 +121,12 @@ export default function Admin() {
           <h1 className="font-display text-2xl font-semibold text-white">Panel de reservas</h1>
           <p className="text-sm text-ink-500">Calendario de viajes del {range.from} al {range.to}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <select
-            className="rounded-lg border border-ink-600 bg-ink-800 px-3 py-2 text-sm text-white shadow-sm outline-none transition focus:border-gold-400"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | BookingStatus)}
-          >
-            <option value="all">Todos los estados</option>
-            {ALL_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={logout}
-            className="rounded-lg border border-white/15 bg-ink-800 px-4 py-2 text-sm font-medium text-ink-400 shadow-sm transition hover:border-gold-400/60 hover:text-gold-300"
-          >
-            Cerrar sesión
-          </button>
-        </div>
+        <button
+          onClick={logout}
+          className="rounded-lg border border-white/15 bg-ink-800 px-4 py-2 text-sm font-medium text-ink-400 shadow-sm transition hover:border-gold-400/60 hover:text-gold-300"
+        >
+          Cerrar sesión
+        </button>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -196,34 +142,13 @@ export default function Admin() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-white/10 bg-ink-900 p-4 shadow-card">
-        {loading ? (
-          <div className="flex justify-center py-24 text-gold-400">
-            <Spinner className="h-8 w-8" />
-          </div>
-        ) : (
-          <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
-            locale="es"
-            locales={[esLocale]}
-            firstDay={1}
-            allDaySlot={false}
-            slotMinTime="06:00:00"
-            slotMaxTime="23:00:00"
-            headerToolbar={{
-              left: 'prev,next today',
-              center: 'title',
-              right: 'dayGridMonth,timeGridWeek',
-            }}
-            events={events}
-            datesSet={onDatesSet}
-            eventClick={onEventClick}
-            height="auto"
-            dayMaxEvents={4}
-          />
-        )}
-      </div>
+      <AdminCalendar
+        bookings={bookings}
+        loading={loading}
+        onRangeChange={handleRangeChange}
+        onSelectBooking={setSelected}
+        onRefresh={() => load(range.from, range.to)}
+      />
 
       {selected && (
         <BookingModal

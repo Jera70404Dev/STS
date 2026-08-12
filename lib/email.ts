@@ -98,7 +98,7 @@ async function send(to: string, subject: string, html: string): Promise<boolean>
   }
   const { error } = await resend.emails.send({ from: from(), to, subject, html })
   if (error) {
-    console.error('Resend error:', error)
+    console.error(`Resend error al enviar a ${to}:`, error)
     return false
   }
   return true

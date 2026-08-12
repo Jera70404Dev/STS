@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowRight, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import {
   BRAND,
   CHAUFFEURS,
@@ -16,13 +16,14 @@ import {
   USPS,
 } from '../content'
 import { Button, Reveal, RatingStars, Avatar, SectionHeading, inputClass, labelClass } from '../components/ui'
+import CardFanCarousel from '../components/card-fan-carousel'
+import { usePrefersReducedMotion } from '../hooks'
 
 export default function Home() {
   return (
     <div>
       <Hero />
       <QuickBooking />
-      <TrustBar />
       <FeaturedServices />
       <WhyUs />
       <FleetPreview />
@@ -33,36 +34,42 @@ export default function Home() {
 }
 
 function Hero() {
+  const reducedMotion = usePrefersReducedMotion()
+
   return (
     <section className="relative flex min-h-screen flex-col overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink-950/60 via-ink-950/10 to-ink-950/80" />
 
-      <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pt-32">
-        <div className="grid flex-1 items-center gap-12 lg:grid-cols-2">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pt-24 lg:max-w-[1500px]">
+        <div className="grid flex-1 items-center gap-8 lg:grid-cols-2 lg:gap-16">
           <div>
             <Reveal>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">
-                Miami · Fort Lauderdale · Palm Beach
-              </p>
-              <h1 className="mt-5 max-w-3xl font-display text-4xl font-semibold leading-tight text-white sm:text-6xl">
+              <h1 className="max-w-xl font-display text-4xl font-semibold leading-tight text-white sm:text-5xl xl:text-6xl">
                 {HERO.title}
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-400">{HERO.subtitle}</p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">
+                Miami · Fort Lauderdale · Palm Beach
+              </p>
+              <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-400">{HERO.subtitle}</p>
             </Reveal>
           </div>
 
-          <div className="hidden justify-center lg:flex">
+          <div className="hidden justify-center lg:flex lg:-translate-y-5">
             <Reveal delay={120}>
               <motion.div
-                animate={{ y: [0, -16, 0], rotate: [0, 1.5, 0] }}
-                transition={{ duration: 7, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }}
+                animate={reducedMotion ? undefined : { y: [0, -16, 0], rotate: [0, 1.5, 0] }}
+                transition={
+                  reducedMotion
+                    ? undefined
+                    : { duration: 7, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }
+                }
               >
-                <div className="w-[420px] rounded-3xl border border-white/10 bg-white/5 p-5 shadow-glow backdrop-blur-xl">
-                  <div className="relative overflow-hidden rounded-2xl">
+                <div className="flex h-[min(800px,calc(100vh_-_240px))] w-full max-w-[850px] flex-col rounded-3xl border border-white/10 bg-white/5 p-5 shadow-glow backdrop-blur-xl">
+                  <div className="relative flex-1 overflow-hidden rounded-2xl">
                     <img
                       src={IMAGES.heroCar}
                       alt="Executive vehicle"
-                      className="h-64 w-full object-cover"
+                      className="h-full w-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-ink-950/50 to-transparent" />
                   </div>
@@ -83,7 +90,7 @@ function Hero() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 pb-10 pt-10">
+        <div className="flex flex-wrap items-center gap-4 pb-8 pt-8">
           <Button to="/reserve" className="px-8 py-4 text-base">
             Reserve Now <ArrowRight className="h-4 w-4" />
           </Button>
@@ -121,19 +128,20 @@ function QuickBooking() {
   }
 
   return (
-    <section className="relative z-10 mx-auto max-w-6xl px-4">
-      <Reveal>
-        <form
-          onSubmit={onSubmit}
-          className="rounded-2xl border border-white/10 bg-ink-900/95 p-6 shadow-card backdrop-blur-md sm:p-8"
-        >
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <h2 className="font-display text-2xl font-semibold text-white">{QUICK_BOOK.title}</h2>
-            <span className="hidden rounded-full border border-gold-400/40 px-3 py-1 text-xs text-gold-300 sm:block">
-              {BRAND.googleRating} ★ on Google
-            </span>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="relative z-10 mx-auto max-w-6xl px-4 py-16 lg:max-w-[1500px] lg:py-20">
+      <div className="grid items-stretch gap-8 lg:grid-cols-2 lg:gap-16">
+        <Reveal>
+          <form
+            onSubmit={onSubmit}
+            className="flex h-full flex-col rounded-2xl border border-white/10 bg-ink-900/95 p-6 shadow-card backdrop-blur-md sm:p-8"
+          >
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <h2 className="font-display text-2xl font-semibold text-white">{QUICK_BOOK.title}</h2>
+              <span className="hidden rounded-full border border-gold-400/40 px-3 py-1 text-xs text-gold-300 sm:block">
+                {BRAND.googleRating} ★ on Google
+              </span>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass} htmlFor="qb-service">
                 Service
@@ -198,25 +206,24 @@ function QuickBooking() {
             </Button>
             <p className="text-xs text-ink-500">{QUICK_BOOK.note}</p>
           </div>
-        </form>
-      </Reveal>
-    </section>
-  )
-}
+          </form>
+        </Reveal>
 
-function TrustBar() {
-  return (
-    <section className="border-b border-white/5">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-12 sm:grid-cols-3 lg:grid-cols-5">
-        {TRUST_BADGES.map((badge, i) => (
-          <Reveal key={badge.title} delay={i * 60} className="flex items-start gap-3">
-            <badge.icon className="mt-0.5 h-5 w-5 shrink-0 text-gold-400" />
-            <div>
-              <p className="text-sm font-semibold text-white">{badge.title}</p>
-              <p className="mt-0.5 text-xs text-ink-500">{badge.text}</p>
-            </div>
-          </Reveal>
-        ))}
+        <Reveal delay={120}>
+          <div className="flex h-full flex-col justify-center gap-6 rounded-2xl border border-white/10 bg-ink-900/50 p-6 shadow-card backdrop-blur-md sm:p-8">
+            {TRUST_BADGES.map((badge) => (
+              <div key={badge.title} className="flex items-start gap-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-400/10 text-gold-400">
+                  <badge.icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="font-semibold text-white">{badge.title}</p>
+                  <p className="mt-0.5 text-sm text-ink-400">{badge.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
       </div>
     </section>
   )
@@ -307,78 +314,30 @@ function WhyUs() {
 }
 
 function FleetPreview() {
-  const trackRef = useRef<HTMLDivElement>(null)
-
-  function scrollBy(dir: 1 | -1) {
-    trackRef.current?.scrollBy({ left: dir * 320, behavior: 'smooth' })
-  }
+  const fanCards = useMemo(
+    () =>
+      FLEET.map((v) => ({
+        imgUrl: v.image,
+        alt: v.name,
+        linkUrl: `/fleet?v=${v.id}`,
+        title: v.name,
+        subtitle: v.category,
+      })),
+    []
+  )
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-20">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <Reveal>
-          <SectionHeading
-            center={false}
-            eyebrow="Our fleet"
-            title="A fleet built for the moment"
-            subtitle="Spotless, modern and meticulously maintained — pick the ride that fits your party."
-          />
-        </Reveal>
-        <Reveal>
-          <div className="flex gap-3">
-            <button
-              onClick={() => scrollBy(-1)}
-              aria-label="Previous vehicles"
-              className="rounded-full border border-white/15 p-2.5 text-white transition hover:border-gold-400/60 hover:text-gold-300"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => scrollBy(1)}
-              aria-label="Next vehicles"
-              className="rounded-full border border-white/15 p-2.5 text-white transition hover:border-gold-400/60 hover:text-gold-300"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
-        </Reveal>
-      </div>
+    <section className="mx-auto max-w-6xl overflow-x-clip px-4 py-20">
+      <Reveal>
+        <SectionHeading
+          center={false}
+          eyebrow="Our fleet"
+          title="A fleet built for the moment"
+          subtitle="Spotless, modern and meticulously maintained — pick the ride that fits your party."
+        />
+      </Reveal>
 
-      <div
-        ref={trackRef}
-        className="mt-10 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2 scrollbar-none"
-      >
-        {FLEET.map((v) => (
-          <Link
-            key={v.id}
-            to={`/fleet?v=${v.id}`}
-            className="group w-72 shrink-0 snap-start overflow-hidden rounded-2xl border border-white/10 bg-ink-900 transition hover:border-gold-400/50 hover:shadow-glow"
-          >
-            <div className="relative h-44 overflow-hidden">
-              <img
-                src={v.image}
-                alt={v.name}
-                loading="lazy"
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-              />
-              <span className="absolute left-3 top-3 rounded-full bg-ink-950/80 px-2.5 py-1 text-xs font-medium text-gold-300">
-                {v.category}
-              </span>
-            </div>
-            <div className="p-5">
-              <h3 className="font-display text-lg font-semibold text-white">{v.name}</h3>
-              <p className="mt-1.5 text-xs text-ink-400">
-                {v.passengers} passengers · {v.luggage} suitcases
-                {v.price ? ` · from $${v.price}` : ' · on request'}
-              </p>
-              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-400">
-                View details
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
+      <CardFanCarousel cards={fanCards} />
 
       <div className="mt-10 text-center">
         <Button to="/fleet" variant="dark">
@@ -422,65 +381,49 @@ function ChauffeurTeaser() {
 }
 
 function Testimonials() {
-  const [index, setIndex] = useState(0)
-  const count = TESTIMONIALS.length
-
-  useEffect(() => {
-    const t = setInterval(() => setIndex((i) => (i + 1) % count), 6000)
-    return () => clearInterval(t)
-  }, [count])
-
-  const t = TESTIMONIALS[index]
+  const columns = useMemo(
+    () => [0, 1, 2].map((col) => TESTIMONIALS.filter((_, i) => i % 3 === col)),
+    []
+  )
 
   return (
-    <section className="mx-auto max-w-4xl px-4 py-20">
+    <section className="mx-auto max-w-6xl px-4 py-20">
       <Reveal>
         <SectionHeading
           eyebrow="Testimonials"
           title="What riders say about us"
+          subtitle="Real reviews from business travelers, wedding parties and locals across South Florida."
         />
       </Reveal>
       <Reveal delay={80}>
-        <div className="mt-12 rounded-2xl border border-white/10 bg-ink-900 p-8 text-center shadow-card sm:p-12">
-          <Quote className="mx-auto h-8 w-8 text-gold-400" />
-          <p className="mt-6 font-display text-xl font-medium leading-relaxed text-white sm:text-2xl">
-            “{t.text}”
-          </p>
-          <div className="mt-6 flex flex-col items-center gap-1.5">
-            <RatingStars rating={t.rating} />
-            <p className="mt-2 font-semibold text-white">{t.name}</p>
-            <p className="text-sm text-ink-500">{t.location}</p>
-          </div>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <button
-              onClick={() => setIndex((index - 1 + count) % count)}
-              aria-label="Previous testimonial"
-              className="rounded-full border border-white/15 p-2 text-white transition hover:border-gold-400/60 hover:text-gold-300"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <div className="flex gap-2">
-              {TESTIMONIALS.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setIndex(i)}
-                  aria-label={`Go to testimonial ${i + 1}`}
-                  className={`h-2 w-2 rounded-full transition ${
-                    i === index ? 'bg-gold-400' : 'bg-ink-600 hover:bg-ink-500'
-                  }`}
-                />
-              ))}
+        <div className="testimonials-marquee">
+          {columns.map((items, col) => (
+            <div key={col} className="testimonials-column">
+              <div className="testimonials-column-inner">
+                {[...items, ...items].map((t, i) => (
+                  <TestimonialCard key={`${t.name}-${i}`} t={t} />
+                ))}
+              </div>
             </div>
-            <button
-              onClick={() => setIndex((index + 1) % count)}
-              aria-label="Next testimonial"
-              className="rounded-full border border-white/15 p-2 text-white transition hover:border-gold-400/60 hover:text-gold-300"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          ))}
         </div>
       </Reveal>
     </section>
+  )
+}
+
+function TestimonialCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
+  return (
+    <article className="w-full max-w-[320px] rounded-2xl border border-white/10 bg-ink-900 p-10 shadow-card">
+      <RatingStars rating={t.rating} className="mb-5" />
+      <p className="text-[0.95rem] leading-[1.7] text-white">“{t.text}”</p>
+      <div className="mt-5 flex items-center gap-3">
+        <Avatar src={t.photo} alt={t.name} className="h-10 w-10" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold leading-snug text-white">{t.name}</p>
+          <p className="mt-0.5 text-xs leading-snug text-ink-500">{t.location}</p>
+        </div>
+      </div>
+    </article>
   )
 }

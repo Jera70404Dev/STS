@@ -1,4 +1,4 @@
-import { Router, type Response } from 'express'
+import { Router } from 'express'
 import { eq } from 'drizzle-orm'
 import { getDb } from '../../db/index.js'
 import { bookings } from '../../db/schema.js'
@@ -35,8 +35,13 @@ router.post('/', async (req, res) => {
       })
       .returning()
 
+    try {
+      await Promise.allSettled([sendBookingNotification(booking), sendConfirmationToClient(booking)])
+    } catch (err) {
+      console.error('Error enviando emails:', err)
+    }
+
     res.status(201).json({ booking })
-    notify(res, booking)
   } catch (err) {
     console.error('Error creando reserva:', err)
     res.status(500).json({ error: 'No se pudo guardar la reserva. Inténtalo de nuevo.' })
@@ -60,13 +65,5 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Error interno' })
   }
 })
-
-async function notify(res: Response, booking: any) {
-  try {
-    await Promise.allSettled([sendBookingNotification(booking), sendConfirmationToClient(booking)])
-  } catch (err) {
-    console.error('Error enviando emails:', err)
-  }
-}
 
 export default router
